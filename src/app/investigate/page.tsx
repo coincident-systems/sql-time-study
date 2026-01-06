@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, X, Play, ChevronRight, Lightbulb } from 'lucide-react';
+import { Check, X, Play, ChevronRight, Lightbulb, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SqlEditor } from '@/components/SqlEditor';
@@ -126,7 +126,8 @@ export default function InvestigatePage() {
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-semibold text-primary">
+              <h1 className="text-lg font-semibold text-primary flex items-center gap-2">
+                <Clock className="w-5 h-5" />
                 Bozeman Deaconess Hospital Investigation
               </h1>
               <p className="text-sm text-muted-foreground">

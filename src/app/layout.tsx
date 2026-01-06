@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SQL Time Study Lab | EIND 313",
   description: "Bozeman Deaconess Hospital Medication Delay Investigation - SQL Learning Lab",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

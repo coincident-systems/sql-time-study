@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Clock } from 'lucide-react';
 import { useStudy } from '@/context/StudyContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import type { StudentInfo } from '@/types';
@@ -75,7 +76,8 @@ export default function LandingPage() {
           <div className="absolute right-0 top-0">
             <ThemeToggle />
           </div>
-          <h1 className="text-3xl font-bold text-primary mb-2">
+          <h1 className="text-3xl font-bold text-primary mb-2 flex items-center justify-center gap-3">
+            <Clock className="w-8 h-8" />
             SQL Time Study Lab
           </h1>
           <p className="text-muted-foreground">
