@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { StudyProvider } from "@/context/StudyContext";
 import { AnalyticsProvider } from "@/lib/analytics";
+import { MobileBlocker } from "@/components/MobileBlocker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,7 +35,9 @@ export default function RootLayout({
       >
         <AnalyticsProvider>
           <StudyProvider>
-            {children}
+            <MobileBlocker>
+              {children}
+            </MobileBlocker>
           </StudyProvider>
         </AnalyticsProvider>
       </body>
