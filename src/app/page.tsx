@@ -12,6 +12,9 @@ import { useStudy } from '@/context/StudyContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import type { StudentInfo } from '@/types';
 
+// Student ID format: letter + 2 digits + letter + 3 digits (e.g., "a12b345")
+const STUDENT_ID_PATTERN = /^[a-zA-Z]\d{2}[a-zA-Z]\d{3}$/;
+
 const SQL_EXPERTISE_OPTIONS = [
   { value: '0', label: 'Never written SQL', description: 'No prior experience with databases' },
   { value: '1', label: 'Done a tutorial', description: 'Completed an online tutorial or intro lesson' },
@@ -43,6 +46,11 @@ export default function LandingPage() {
 
     if (!studentId.trim()) {
       setError('Please enter your student ID');
+      return;
+    }
+
+    if (!STUDENT_ID_PATTERN.test(studentId.trim())) {
+      setError('Student ID must be in format: a12b345 (letter, 2 digits, letter, 3 digits)');
       return;
     }
 
@@ -134,10 +142,11 @@ export default function LandingPage() {
                 <Input
                   id="studentId"
                   type="text"
-                  placeholder="Enter your student ID"
+                  placeholder="e.g., a12b345"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  className="max-w-xs"
+                  onChange={(e) => setStudentId(e.target.value.toLowerCase())}
+                  className="max-w-xs font-mono"
+                  maxLength={7}
                 />
               </div>
 
