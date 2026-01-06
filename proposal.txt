@@ -1,0 +1,91 @@
+EIND 313 New Lab Proposal
+
+Hey Bernadette,
+
+With the Canvas switch coming I figured it's as good a time as any to pitch a new lab idea. Adds SQL to the curriculum without blowing up what already works.
+
+
+The idea
+
+We build a little web app with a fake hospital EMR database. Students work through a series of SQL queries—progressively harder—while the app quietly logs how long each one takes. At the end they export a CSV of their own performance data and run a regression in Minitab. So they're learning SQL, generating a learning curve dataset in the process, and then analyzing it. Felt like a natural fit for work design given the healthcare theme you've already got going.
+
+
+Why SQL?
+
+Healthcare IE work is increasingly "pull data from the EMR and figure out what's broken." It's a skill they'll actually use. And honestly it's way easier to set up than physical assembly tasks—no materials, whole class can run at once, clean data collection without stopwatch fumbling. The MEGA LAB can stay brutal; this one can be almost pleasant.
+
+
+Task structure
+
+5 rounds, 3-4 queries each, everyone does them in the same order. That way task_id is a clean fixed effect in the analysis—no randomization nonsense.
+
+We'd wrap it in a narrative, something like "Riverside Medical Center Medication Delay Investigation." Each round reveals more of the story as they go.
+
+Round 1 is basic SELECT/WHERE—find the patient with the reported issue. Round 2 introduces JOINs to pull encounter history and diagnoses. Round 3 brings in aggregations to figure out if this is one patient or systemic. Round 4 gets into multi-table JOINs and GROUP BY to identify which departments, providers, shifts are involved. Round 5 uses subqueries or CTEs to quantify and rank the problem areas.
+
+~15-20 queries total. Before they start, they self-report SQL experience on a 0-3 scale. That becomes a covariate in their regression later.
+
+
+What gets logged
+
+student_id, sql_expertise, round, query_num, task_id, time_sec, attempts, timestamp
+
+They don't see a timer ticking—that'd stress people out and we don't need anyone crying over query performance. They just see the story, write queries, get a green checkmark when it's right. Time logs silently in the background.
+
+
+The database
+
+Standard EMR-ish schema: patients, encounters, diagnoses, medications, labs, providers. We'd populate it with ~500 fake patients, realistic distributions. Could use Synthea or just script something up—not a heavy lift either way.
+
+
+Learning curve analysis
+
+This is the real pedagogical payoff. The classic learning curve model is a power law—T_n = T_1 * n^b—where T_n is time on trial n, T_1 is first-unit time, and b is the learning exponent (negative, since we get faster). The "learning rate" everyone talks about is 2^b, so if b = -0.234 you get an 85% learning curve, meaning every doubling of cumulative production cuts time by 15%.
+
+The nice thing is you can linearize it with a log transform. Take logs of both sides and you get log(T_n) = log(T_1) + b*log(n), which is just y = β_0 + β_1*x. Plain old linear regression. Students fit this in Minitab, get the slope, convert to a learning rate percentage, and suddenly Freivalds chapter whatever isn't just theory anymore—it's their own data.
+
+Then we extend it. Add sql_expertise as a covariate. Add round to capture difficulty differences. Maybe add time_since_start to look for fatigue effects. Now they're doing multiple regression and interpreting coefficients in a context that actually makes sense to them. "Does prior SQL experience significantly reduce query time?" That's a real question with a real answer they can pull from their output.
+
+I think the key insight for them is that learning curves aren't just for manufacturing—they apply to cognitive tasks too. Training program design, staffing ramp-ups, all of it. If you know someone's learning rate for a task, you can predict when they'll hit a target performance level. That's legitimately useful stuff they'd do in industry, especially healthcare ops.
+
+
+Minitab analysis
+
+So concretely: they open their CSV, log-transform time and query_sequence, run regression. Response is log(time_sec), predictors are log(query_sequence), sql_expertise, and round. 
+
+They answer: What's the coefficient on log(query_sequence)? That's b, the learning exponent—convert it to a learning rate. Is sql_expertise significant? Does prior experience actually reduce time, controlling for practice effects? Which round took longest? Sanity check that difficulty is captured. Residual plots—anything weird, any outliers from when they got up to pee or whatever?
+
+This gets the learning curve concept in their heads before the MEGA LAB makes them do it manually with stopwatches. Nice scaffolding—they've seen the analysis once in a low-stakes context, so when the real thing hits they're not learning the stats AND suffering through the data collection simultaneously.
+
+
+Tech
+
+sql.js or DuckDB-WASM runs SQLite in the browser, so no backend needed. Monaco editor for syntax highlighting. React + Tailwind, host on Vercel for free. CSV export button at the end.
+
+We can stand up a prototype pretty quick—Claude Code makes this stuff almost trivially fast to build. Happy to own that piece.
+
+
+Deliverables
+
+1. Complete the SQL challenges in the app (~45-60 min)
+2. Export their data (one click)
+3. Minitab regression + plots
+4. 1-page memo on what factors predicted their performance, implications for training program design—maybe something like "based on the fitted learning curve, a new analyst would need X queries of practice before hitting a 2-minute target time"
+
+
+How it fits
+
+Doesn't replace the time study MEGA LAB—complements it. They experience being timed (painlessly, automatically) before they have to do the tedious manual version. Introduces learning curve regression in a low-stakes context so when the MEGA LAB hits they've already seen the concept once. Could even reference back: "remember when you analyzed your own SQL learning curve? Now you're collecting that data manually for someone else."
+
+
+Next steps
+
+If this sounds good:
+
+1. Build a working prototype of the app
+2. Write out the actual query sequences
+3. Generate the fake EMR data
+4. Draft student-facing lab handout
+5. Test it ourselves to calibrate timing
+
+Let me know what you think—happy to hop on a call or just keep iterating here. So much more we could do with this (leaderboards? class-wide analysis? compare across semesters?) but v1 should probably just be clean and simple.

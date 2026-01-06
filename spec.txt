@@ -1,0 +1,228 @@
+SQL Time Study Web App - Build Spec
+
+This is a spec for a web app that times students doing SQL queries against a fake hospital EMR database. The app logs their performance data silently, which they later export and analyze in Minitab for a learning curve regression. It's for an Industrial Engineering course (EIND 313: Work Design and Analysis) at Montana State.
+
+
+TECH STACK
+
+- Next.js (app router)
+- sql.js or DuckDB-WASM for in-browser SQLite (no backend, everything client-side)
+- Monaco editor for the SQL input (VS Code's editor component)
+- Tailwind for styling
+- Vercel for hosting
+- All state in localStorage until export
+
+
+THE DATABASE SCHEMA
+
+We need a fake EMR with ~500 patients. Tables:
+
+patients
+  patient_id (PK), mrn, first_name, last_name, dob, gender, 
+  admission_date, discharge_date, unit, room_number
+
+encounters
+  encounter_id (PK), patient_id (FK), encounter_date, encounter_type,
+  department, provider_id (FK), chief_complaint, length_of_stay_hours
+
+diagnoses
+  diagnosis_id (PK), encounter_id (FK), icd10_code, description, 
+  diagnosis_date, is_primary
+
+medications
+  med_id (PK), patient_id (FK), encounter_id (FK), drug_name, dose, 
+  frequency, route, scheduled_time, administered_time, delay_minutes,
+  administering_nurse_id
+
+labs
+  lab_id (PK), patient_id (FK), test_name, result_value, units,
+  reference_low, reference_high, collected_date, abnormal_flag
+
+providers
+  provider_id (PK), name, specialty, department, shift
+
+nurses
+  nurse_id (PK), name, unit, shift, years_experience
+
+The key thing for our narrative: the medications table has scheduled_time, administered_time, and delay_minutes. This is what students will investigate—medication administration delays.
+
+Generate realistic-ish data. Some units should have worse delays than others. Some shifts worse than others. Some correlation with nurse experience. Doesn't need to be perfect, just enough signal that their queries return meaningful patterns.
+
+
+THE NARRATIVE
+
+"Riverside Medical Center Medication Delay Investigation"
+
+Setup: You've been brought in as an IE consultant. Nursing leadership flagged a recurring issue—patients on certain units are experiencing delays in receiving scheduled medications. Your job is to use EMR data to investigate the scope of the problem, identify patterns, and quantify the impact.
+
+This framing gives them a reason to care about the queries. Each round reveals more of the investigation.
+
+
+TASK STRUCTURE
+
+5 rounds, 3-4 queries each, fixed order for everyone. Total of 15-18 queries.
+
+ROUND 1: The Patient (Basic SELECT/WHERE)
+Context: "A nurse on Cardiac Unit B reported that patient John Martinez experienced a significant medication delay yesterday. Let's start by finding this patient."
+
+Query 1.1: "Find all patients with last name 'Martinez'"
+Expected: SELECT * FROM patients WHERE last_name = 'Martinez';
+
+Query 1.2: "Find all patients currently admitted to Cardiac Unit B"
+Expected: SELECT * FROM patients WHERE unit = 'Cardiac B' AND discharge_date IS NULL;
+
+Query 1.3: "List all medications administered to patient_id 247 in the last 7 days, ordered by scheduled time"
+Expected: SELECT * FROM medications WHERE patient_id = 247 AND scheduled_time > date('now', '-7 days') ORDER BY scheduled_time;
+
+ROUND 2: The History (Single JOINs)
+Context: "You found John Martinez (patient_id 247). His record shows multiple delayed medications. Let's pull his full history to understand the pattern."
+
+Query 2.1: "List all of patient 247's encounters with the provider name"
+Expected: SELECT e.*, p.name as provider_name FROM encounters e JOIN providers p ON e.provider_id = p.provider_id WHERE e.patient_id = 247;
+
+Query 2.2: "Show all medications for patient 247 with the administering nurse's name"
+Expected: SELECT m.*, n.name as nurse_name FROM medications m JOIN nurses n ON m.administering_nurse_id = n.nurse_id WHERE m.patient_id = 247;
+
+Query 2.3: "Find all diagnoses for patient 247 with their encounter dates"
+Expected: SELECT d.*, e.encounter_date FROM diagnoses d JOIN encounters e ON d.encounter_id = e.encounter_id WHERE e.patient_id = 247;
+
+ROUND 3: The Pattern (Aggregations)
+Context: "John Martinez isn't an isolated case. Let's see how widespread the delay problem is."
+
+Query 3.1: "What's the average medication delay in minutes across all administrations?"
+Expected: SELECT AVG(delay_minutes) as avg_delay FROM medications;
+
+Query 3.2: "How many medication administrations had a delay greater than 30 minutes?"
+Expected: SELECT COUNT(*) FROM medications WHERE delay_minutes > 30;
+
+Query 3.3: "What's the average delay by unit?"
+Expected: SELECT p.unit, AVG(m.delay_minutes) as avg_delay FROM medications m JOIN patients p ON m.patient_id = p.patient_id GROUP BY p.unit;
+
+Query 3.4: "What percentage of medications are delayed more than 15 minutes?" 
+Expected: Something involving COUNT with CASE or subquery
+
+ROUND 4: The Root Cause (Multi-table JOINs, GROUP BY)
+Context: "Cardiac B has the worst delays. Let's dig into why."
+
+Query 4.1: "What's the average delay by shift for Cardiac Unit B?"
+Expected: Multi-join through patients to get unit, group by nurse shift
+
+Query 4.2: "Which nurses have the highest average delay times? Show top 10."
+Expected: JOIN medications to nurses, GROUP BY nurse, ORDER BY avg delay DESC, LIMIT 10
+
+Query 4.3: "Is there a correlation between nurse experience and delay? Show average delay grouped by years_experience."
+Expected: JOIN and GROUP BY years_experience
+
+Query 4.4: "What's the average delay by hour of day? (to see if certain times are worse)"
+Expected: Extract hour from scheduled_time, GROUP BY
+
+ROUND 5: The Recommendation (Subqueries/CTEs, synthesis)
+Context: "You've identified the pattern. Now quantify the impact and prepare your findings."
+
+Query 5.1: "Find all nurses whose average delay exceeds the hospital-wide average"
+Expected: Subquery for hospital avg, compare in WHERE or HAVING
+
+Query 5.2: "Rank units by total delayed-minutes (sum of all delays > 15 min)"
+Expected: Filtered aggregation with ranking
+
+Query 5.3: "Create a summary showing each unit's total medications, total delayed (>15min), and delay rate"
+Expected: CASE statements or subqueries for conditional counting
+
+Query 5.4: "What would be the impact if we reduced Cardiac B's delays to the hospital average? Calculate total minutes saved."
+Expected: Requires some arithmetic with aggregates
+
+
+Note: The exact expected queries don't need to match perfectly. The app should check if the RESULT SET matches, not the query syntax. Multiple correct approaches exist.
+
+
+USER FLOW
+
+1. Landing page
+   - Brief intro (2-3 sentences about the investigation)
+   - Input: Student ID (text field)
+   - Input: SQL Experience level (0-3 radio buttons with labels like "0 = never written SQL", "1 = done a tutorial once", "2 = used it in a class or project", "3 = use it regularly")
+   - "Begin Investigation" button
+
+2. Task screen (this is where they spend most of their time)
+   - Top: Round indicator ("Round 2 of 5") and query indicator ("Query 2 of 4")
+   - Story/context text (the narrative for this round, shown once at start of round)
+   - Task prompt: the specific question they need to answer
+   - Schema reference: collapsible sidebar or panel showing table structures
+   - Monaco editor for SQL input
+   - "Run Query" button
+   - Results panel: shows query output as a table, or error message if query fails
+   - "Submit" button: only enabled when they've run a query that produces results
+   - On submit, check if results match expected. If yes, green checkmark, brief "Correct!" message, then auto-advance after 1-2 seconds. If no, red X, "Not quite—check your results against what's being asked" and let them try again.
+
+3. Between rounds
+   - Brief narrative update ("Your queries revealed that Cardiac Unit B has significantly higher delays than other units. Average delay: 34 minutes vs hospital-wide 18 minutes. Let's dig deeper...")
+   - "Continue to Round 3" button
+
+4. Completion screen
+   - "Investigation Complete"
+   - Summary stats: X queries completed, total time, average time per query
+   - "Download Your Data (CSV)" button - this is the key deliverable
+   - Maybe a simple chart showing their time per query (visual payoff)
+
+
+DATA LOGGING
+
+Every query attempt gets logged to localStorage. On CSV export, compile all attempts.
+
+Fields to capture:
+- student_id (from intake)
+- sql_expertise (from intake, 0-3)
+- round (1-5)
+- query_num (1-4 within round)
+- task_id (like "2.3" for round 2 query 3—this is the fixed effect)
+- query_sequence (1-18, the overall order)
+- attempt_num (which attempt at this specific task, starts at 1)
+- time_sec (seconds from task reveal to successful submit)
+- total_attempts (how many tries before getting it right)
+- submitted_query (the actual SQL they wrote—useful for debugging/grading)
+- completed_at (ISO timestamp)
+
+CSV export should have one row per task (not per attempt), with the final successful data. But maybe also log all attempts somewhere in case it's useful later.
+
+
+RESULT CHECKING
+
+Don't compare SQL strings—compare result sets. Run their query and compare the output to the expected output. This is tricky because:
+- Column order might differ
+- Row order might differ (unless ORDER BY is required)
+- Floating point precision issues
+
+Approach: 
+- For queries where order doesn't matter, sort both result sets and compare
+- For queries with ORDER BY, preserve order in comparison
+- Round floats to reasonable precision
+- Compare column names (case-insensitive probably)
+
+If it's too hard to get perfect, we can fall back to showing them the expected result and letting them self-verify with a "My results match" button. Not ideal but functional for v1.
+
+
+UI/UX NOTES
+
+- Keep it clean. Healthcare-ish color scheme maybe (blues, whites, subtle green for success).
+- Monaco editor should have SQL syntax highlighting, decent font size, line numbers
+- Schema reference should be always accessible but not in the way—collapsible sidebar or a "Show Schema" button that opens a modal
+- Don't show a ticking timer. That stresses people out. Time is logged silently.
+- Progress indicator should be clear but not anxiety-inducing. Something like a simple progress bar or "Round 2 of 5 • Query 3 of 4"
+- Mobile support isn't critical—they'll do this on laptops in lab
+
+
+STRETCH GOALS (not for v1)
+
+- Leaderboard (opt-in, anonymized)
+- Class code system so instructors can see aggregate data
+- Hint system (costs time penalty?)
+- Dark mode
+- Query history within session
+- Syntax error highlighting before running
+
+
+WHAT SUCCESS LOOKS LIKE
+
+Student shows up to lab, opens the URL, enters their ID and experience level, works through 15-18 SQL queries over ~45-60 minutes, downloads their CSV, and takes it to Minitab. The CSV has clean data they can immediately use for learning curve regression. They plot log(time) vs log(query_sequence), fit a line, interpret the slope as a learning rate, add sql_expertise as a covariate, and write a memo about what they found.
+
+The app should feel polished enough that it's not embarrassing, but it doesn't need to be production-grade. It's a teaching tool for a single course.
