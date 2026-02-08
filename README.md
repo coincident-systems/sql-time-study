@@ -1,6 +1,6 @@
 # SQL Time Study Lab
 
-![Playwright Tests](https://github.com/YOUR_USERNAME/sql-time-study/actions/workflows/playwright.yml/badge.svg)
+![Playwright Tests](https://github.com/coincident-systems/sql-time-study/actions/workflows/playwright.yml/badge.svg)
 
 A web application for **EIND 313: Work Design & Analysis** where students complete SQL queries against a simulated hospital EMR database, get silently timed, and export their performance data for learning curve regression analysis in Minitab.
 
