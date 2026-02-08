@@ -25,7 +25,7 @@ CI=true pnpm exec playwright test --debug "completes all 18"
 ### Environment
 - **OS:** Ubuntu (latest)
 - **Node:** v20
-- **Package Manager:** pnpm v8
+- **Package Manager:** pnpm v10
 - **Browser:** Chromium (installed with system dependencies)
 
 ### Test Settings (Automatic in CI)
