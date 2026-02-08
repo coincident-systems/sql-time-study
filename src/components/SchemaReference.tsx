@@ -88,10 +88,10 @@ export function SchemaReference({ className = '' }: SchemaReferenceProps) {
                       >
                         <div className="flex items-center gap-1 min-w-0">
                           {col.isPrimaryKey && (
-                            <Key className="w-3 h-3 text-yellow-500 flex-shrink-0" aria-label="Primary Key" />
+                            <Key className="w-3 h-3 text-accent flex-shrink-0" aria-label="Primary Key" />
                           )}
                           {col.isForeignKey && (
-                            <Link className="w-3 h-3 text-blue-500 flex-shrink-0" aria-label="Foreign Key" />
+                            <Link className="w-3 h-3 text-primary flex-shrink-0" aria-label="Foreign Key" />
                           )}
                           <span className="font-mono text-foreground">{col.name}</span>
                         </div>
@@ -115,10 +115,10 @@ export function SchemaReference({ className = '' }: SchemaReferenceProps) {
 
       <div className="p-2 border-t border-border text-xs text-muted-foreground flex items-center gap-3">
         <span className="flex items-center gap-1">
-          <Key className="w-3 h-3 text-yellow-500" /> Primary Key
+          <Key className="w-3 h-3 text-accent" /> Primary Key
         </span>
         <span className="flex items-center gap-1">
-          <Link className="w-3 h-3 text-blue-500" /> Foreign Key
+          <Link className="w-3 h-3 text-primary" /> Foreign Key
         </span>
       </div>
     </div>

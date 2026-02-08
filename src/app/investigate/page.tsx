@@ -2,14 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, X, Play, ChevronRight, Lightbulb, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Clock, ChevronRight, Lightbulb, Play, AlertCircle, Home, Check, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { useStudy } from '@/context/StudyContext';
 import { SqlEditor } from '@/components/SqlEditor';
 import { ResultsTable } from '@/components/ResultsTable';
 import { SchemaReference } from '@/components/SchemaReference';
 import { ProgressIndicator } from '@/components/ProgressIndicator';
-import { useStudy } from '@/context/StudyContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { getTotalTaskCount } from '@/data/tasks';
 import type { QueryResult } from '@/types';
@@ -30,20 +40,13 @@ export default function InvestigatePage() {
 
   const [sql, setSql] = useState('');
   const [result, setResult] = useState<QueryResult | null>(null);
+  const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHints, setShowHints] = useState(false);
   const [showNarrative, setShowNarrative] = useState(true);
 
-  // Redirect if no session
-  useEffect(() => {
-    if (!isLoading && !session.studentInfo) {
-      router.push('/');
-    }
-    if (!isLoading && session.isComplete) {
-      router.push('/complete');
-    }
-  }, [isLoading, session, router]);
+
 
   // Reset state when task changes
   useEffect(() => {
@@ -109,6 +112,21 @@ export default function InvestigatePage() {
   }
 
   // No task (shouldn't happen if routing is correct)
+  // Guard: show message if no session
+  if (!session.studentInfo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-primary mb-4">No Active Session</h1>
+          <p className="text-muted-foreground mb-6">
+            Please start a session from the home page.
+          </p>
+          <Button onClick={() => router.push('/')}>Go to Home</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentTask || !currentRound) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -120,7 +138,7 @@ export default function InvestigatePage() {
   const totalTasks = getTotalTaskCount();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -143,6 +161,35 @@ export default function InvestigatePage() {
                   SQL Level: {session.studentInfo?.sqlExpertise}
                 </div>
               </div>
+              <Dialog open={homeDialogOpen} onOpenChange={setHomeDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Home className="w-4 h-4 mr-1" />
+                    Home
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Return to Home?</DialogTitle>
+                    <DialogDescription>
+                      Your progress has been automatically saved. You can return to this investigation at any time.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setHomeDialogOpen(false)}>
+                      Stay Here
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        toast.success('Session saved');
+                        router.push('/');
+                      }}
+                    >
+                      Go to Home
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <ThemeToggle />
             </div>
           </div>
@@ -162,13 +209,13 @@ export default function InvestigatePage() {
 
         {/* Round narrative (shown at start of round) */}
         {showNarrative && session.currentQuery === 1 && (
-          <Card className="mb-6 border-primary/20 bg-primary/5">
+          <Card className="mb-6 border-accent/30 bg-accent/10 dark:bg-accent/20 dark:border-accent/40">
             <CardContent className="pt-6">
               <p className="text-sm leading-relaxed whitespace-pre-line">
                 {currentRound.contextBefore}
               </p>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 className="mt-4"
                 onClick={() => setShowNarrative(false)}
@@ -201,13 +248,12 @@ export default function InvestigatePage() {
                 {currentTask.hints && currentTask.hints.length > 0 && (
                   <div className="mt-4">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         if (!showHints) trackHintViewed();
                         setShowHints(!showHints);
                       }}
-                      className="text-muted-foreground"
                     >
                       <Lightbulb className="w-4 h-4 mr-1" />
                       {showHints ? 'Hide hints' : 'Show hints'}

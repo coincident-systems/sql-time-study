@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { StudyProvider } from "@/context/StudyContext";
 import { AnalyticsProvider } from "@/lib/analytics";
 import { MobileBlocker } from "@/components/MobileBlocker";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,7 +38,15 @@ export default function RootLayout({
         <AnalyticsProvider>
           <StudyProvider>
             <MobileBlocker>
-              {children}
+              <div className="min-h-screen flex flex-col">
+                <div className="flex-1">
+                  {children}
+                </div>
+                <footer className="py-4 px-4 text-center text-xs text-muted-foreground border-t border-border/40">
+                  <p>&copy; {new Date().getFullYear()} MSU BioReD Hub &middot; Montana State University &middot; EIND 313: Work Design &amp; Analysis</p>
+                </footer>
+              </div>
+              <Toaster richColors position="bottom-right" />
             </MobileBlocker>
           </StudyProvider>
         </AnalyticsProvider>

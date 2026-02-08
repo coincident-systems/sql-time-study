@@ -13,16 +13,6 @@ export default function CompletePage() {
   const router = useRouter();
   const { session, isLoading, downloadData, resetStudy, stats } = useStudy();
 
-  // Redirect if no session or not complete
-  useEffect(() => {
-    if (!isLoading && !session.studentInfo) {
-      router.push('/');
-    }
-    if (!isLoading && !session.isComplete && session.studentInfo) {
-      router.push('/investigate');
-    }
-  }, [isLoading, session, router]);
-
   const handleReset = () => {
     resetStudy();
     router.push('/');
@@ -44,8 +34,23 @@ export default function CompletePage() {
 
   const totalTasks = getTotalTaskCount();
 
+  // Guard: show message if not completed
+  if (!session.isComplete) {
+    return (
+      <div className="flex-1 bg-background py-12 px-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-2xl font-bold text-primary mb-4">Investigation Not Complete</h1>
+          <p className="text-muted-foreground mb-6">
+            You haven&apos;t completed the investigation yet.
+          </p>
+          <Button onClick={() => router.push('/')}>Go to Home</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 py-12 px-4">
+    <div className="flex-1 bg-background py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Success header */}
         <div className="text-center mb-8 relative">
@@ -114,7 +119,7 @@ export default function CompletePage() {
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-primary/5 rounded-lg text-sm">
+            <div className="mt-4 p-3 bg-accent/10 dark:bg-accent/20 rounded-lg text-sm">
               <strong>SQL Experience Level:</strong> {session.studentInfo?.sqlExpertise}
               <span className="text-muted-foreground ml-2">
                 (This will be used as a covariate in your regression analysis)
@@ -178,7 +183,7 @@ export default function CompletePage() {
         </Card>
 
         {/* Investigation findings recap */}
-        <Card className="mb-6 border-primary/20 bg-primary/5">
+        <Card className="mb-6 border-accent/30 bg-accent/10 dark:bg-accent/20 dark:border-accent/40">
           <CardHeader>
             <CardTitle>Investigation Findings Recap</CardTitle>
           </CardHeader>
