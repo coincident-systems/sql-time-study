@@ -34,11 +34,22 @@ test.describe('Landing Page', () => {
   });
 
   test('accepts valid student ID format', async ({ page }) => {
-    await page.getByLabel('Student ID').fill('a12b345');
+    const studentIdInput = page.getByLabel('Student ID');
+    await studentIdInput.click();
+    await studentIdInput.fill('a12b345');
+    
     // Select expertise level
     await page.getByText('0 - Never written SQL').click();
-    await page.getByRole('button', { name: 'Begin Investigation' }).click();
+    
+    // Click form submit button
+    await page.getByRole('button', { name: 'Begin Investigation' }).first().click();
 
+    // Should show the session manager
+    await expect(page.getByText('Session In Progress')).toBeVisible({ timeout: 10000 });
+    
+    // Now click the "Begin Investigation" button in SessionManager to navigate
+    await page.getByRole('button', { name: /Begin Investigation|Resume Investigation/ }).last().click();
+    
     // Should navigate to investigate page
     await expect(page).toHaveURL('/investigate');
   });

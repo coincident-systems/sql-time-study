@@ -1,13 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { startSession } from './helpers';
 
 test.describe('Investigation Page', () => {
   test.beforeEach(async ({ page }) => {
-    // Start a session first
+    // Clear localStorage and start a fresh session
     await page.goto('/');
-    await page.getByLabel('Student ID').fill('a12b345');
-    await page.getByText('0 - Never written SQL').click();
-    await page.getByRole('button', { name: 'Begin Investigation' }).click();
-    await expect(page).toHaveURL('/investigate');
+    await page.evaluate(() => localStorage.clear());
+    await startSession(page, 'i12v123', '0');
   });
 
   test('displays the investigation interface', async ({ page }) => {

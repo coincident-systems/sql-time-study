@@ -26,8 +26,10 @@
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "posthog-js": "^1.313.0",
+    "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "sonner": "^2.0.7",
     "sql.js": "^1.13.0",
     "tailwind-merge": "^3.4.0"
   },
