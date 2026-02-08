@@ -51,7 +51,7 @@ Generate realistic-ish data. Some units should have worse delays than others. So
 
 THE NARRATIVE
 
-"Riverside Medical Center Medication Delay Investigation"
+"Bozeman Deaconess Hospital Medication Delay Investigation"
 
 Setup: You've been brought in as an IE consultant. Nursing leadership flagged a recurring issue—patients on certain units are experiencing delays in receiving scheduled medications. Your job is to use EMR data to investigate the scope of the problem, identify patterns, and quantify the impact.
 

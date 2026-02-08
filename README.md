@@ -1,5 +1,7 @@
 # SQL Time Study Lab
 
+![Playwright Tests](https://github.com/YOUR_USERNAME/sql-time-study/actions/workflows/playwright.yml/badge.svg)
+
 A web application for **EIND 313: Work Design & Analysis** where students complete SQL queries against a simulated hospital EMR database, get silently timed, and export their performance data for learning curve regression analysis in Minitab.
 
 ## The Investigation
@@ -35,6 +37,53 @@ pnpm dev
 | `pnpm test` | Run tests with Vitest |
 | `pnpm test:ui` | Run tests with Vitest UI |
 | `pnpm lint` | Run ESLint |
+
+## Testing
+
+### E2E Tests (Playwright)
+
+Comprehensive end-to-end tests covering the full student experience:
+
+```bash
+# Run all E2E tests
+pnpm exec playwright test
+
+# Run specific test suite
+pnpm exec playwright test e2e/marathon.spec.ts
+
+# Run tests in headed mode (see browser)
+pnpm exec playwright test --headed
+
+# Debug specific test
+pnpm exec playwright test --debug
+```
+
+**Test Coverage:**
+- ✅ 7 flow tests (guards, persistence, correctness)
+- ✅ 4 marathon tests (full 18-query journeys with retries, pause/resume)
+- ✅ 7 landing page tests (validation, formatting)
+- ✅ 6 investigation page tests (UI elements, hints, progress)
+
+**Total: 24 tests passing** (~2 minutes runtime)
+
+### Known Limitations
+
+Monaco Editor testing uses `page.evaluate()` to call the Monaco API directly since keyboard events don't work with controlled components:
+
+```typescript
+// ❌ This doesn't work
+await page.keyboard.type('SELECT * FROM patients');
+
+// ✅ This works
+await page.evaluate((sql) => {
+  const editors = window.monaco?.editor?.getEditors?.();
+  if (editors && editors.length > 0) {
+    editors[0].getModel()?.setValue(sql);
+  }
+}, sql);
+```
+
+See `e2e/helpers.ts` for the implementation.
 
 ## Tech Stack
 

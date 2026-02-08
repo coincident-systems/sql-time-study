@@ -18,12 +18,14 @@ A web app for EIND 313 (Work Design & Analysis) where students complete SQL quer
 
 ## Design System
 
-Uses Merc design tokens from `~/Workspace/coincident/merc/`:
-- Primary Blue: `#1e4784`
-- Light Blue: `#4A90E2`
-- Secondary Yellow: `#FDB913`
-- Success: `#34a853`
-- Danger: `#ea4335`
+MSU (Montana State University) branded:
+- MSU Blue: `#162960` (primary)
+- MSU Gold: `#f4b425` (accent, ring/focus)
+- MSU Gold Light: `#fada92` (highlights)
+- Success: `#16a34a`
+- Danger: `#dc2626`
+
+Dark mode uses lightened blue (`#6b8fd4`) for readability; gold stays as-is.
 
 ## Directory Structure
 
