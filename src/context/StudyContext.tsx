@@ -13,9 +13,10 @@ import {
   logAttempt,
   advanceSession,
   clearSession,
-  downloadCsv,
+  downloadFile,
   getSessionStats,
 } from '@/lib/dataLogger';
+import type { ExportFormat } from '@/lib/dataLogger';
 import {
   useStudyTracking,
   useRoundTracking,
@@ -39,7 +40,7 @@ interface StudyContextType {
   runQuery: (sql: string) => Promise<QueryResult>;
   submitAnswer: (sql: string) => Promise<{ isCorrect: boolean; message: string }>;
   resetStudy: () => void;
-  downloadData: () => void;
+  downloadData: (format?: ExportFormat) => void;
   trackHintViewed: () => void;
 
   // Stats
@@ -343,9 +344,9 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     trackStudyReset();
   }, [trackStudyReset]);
 
-  // Download CSV data
-  const downloadData = useCallback(() => {
-    downloadCsv(session);
+  // Download data in specified format
+  const downloadData = useCallback((format: ExportFormat = 'csv') => {
+    downloadFile(session, format);
 
     // Track download
     const ctx = getAnalyticsContext();

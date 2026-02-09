@@ -1,6 +1,74 @@
+import yaml from 'js-yaml';
 import type { TaskAttempt, StudySession, StudentInfo } from '@/types';
+import { analyzeSession } from './analysis';
+import { gradeSession } from './grading';
+import type { AnalysisResult } from './analysis';
+import type { GradingResult } from './grading';
+
+// ---------------------------------------------------------------------------
+// Export format type
+// ---------------------------------------------------------------------------
+
+export type ExportFormat = 'csv' | 'json' | 'yaml';
+
+// ---------------------------------------------------------------------------
+// Structured export payload (used by JSON and YAML)
+// ---------------------------------------------------------------------------
+
+export interface ExportPayload {
+  metadata: {
+    schemaVersion: string;
+    exportFormat: string;
+    exportedAt: string;
+    appVersion: string;
+    description: string;
+  };
+  student: {
+    studentId: string;
+    sqlExpertise: number;
+    expertiseLabel: string;
+  };
+  observations: ExportObservation[];
+  analysis: AnalysisResult;
+  grading: GradingResult;
+  /** R / Python usage hints embedded in the export */
+  usageHints: {
+    r: string;
+    python: string;
+  };
+}
+
+export interface ExportObservation {
+  student_id: string;
+  sql_expertise: number;
+  round: number;
+  query_num: number;
+  task_id: string;
+  query_sequence: number;
+  time_sec: number;
+  total_attempts: number;
+  submitted_query: string;
+  completed_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
 const STORAGE_KEY = 'sql-time-study-session';
+const SCHEMA_VERSION = '2.0.0';
+const APP_VERSION = '1.1.0';
+
+const EXPERTISE_LABELS: Record<number, string> = {
+  0: 'No experience',
+  1: 'Basic (SELECT/WHERE)',
+  2: 'Intermediate (JOINs, GROUP BY)',
+  3: 'Advanced (subqueries, CTEs)',
+};
+
+// ---------------------------------------------------------------------------
+// Session CRUD (unchanged)
+// ---------------------------------------------------------------------------
 
 /**
  * Initialize or retrieve study session from localStorage.
@@ -129,12 +197,13 @@ export function clearSession(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-/**
- * Export session data as CSV string.
- */
-export function exportToCsv(session: StudySession): string {
+// ---------------------------------------------------------------------------
+// Prepare final observations (shared across all formats)
+// ---------------------------------------------------------------------------
+
+export function prepareFinalObservations(session: StudySession): ExportObservation[] {
   if (!session.studentInfo || session.attempts.length === 0) {
-    return '';
+    return [];
   }
 
   // Get only the successful (correct) attempts, keeping the last one per task
@@ -145,23 +214,93 @@ export function exportToCsv(session: StudySession): string {
     }
   }
 
-  // Count total attempts per task for the total_attempts field
+  // Count total attempts per task
   const attemptCounts = new Map<string, number>();
   for (const attempt of session.attempts) {
     const current = attemptCounts.get(attempt.taskId) || 0;
     attemptCounts.set(attempt.taskId, current + 1);
   }
 
-  // Update total_attempts in successful attempts
-  const finalAttempts = Array.from(successfulAttempts.values()).map((attempt) => ({
-    ...attempt,
-    totalAttempts: attemptCounts.get(attempt.taskId) || 1,
+  // Build final observations with updated attempt counts
+  const observations = Array.from(successfulAttempts.values()).map((a) => ({
+    student_id: a.studentId,
+    sql_expertise: a.sqlExpertise,
+    round: a.round,
+    query_num: a.queryNum,
+    task_id: a.taskId,
+    query_sequence: a.querySequence,
+    time_sec: parseFloat(a.timeSec.toFixed(2)),
+    total_attempts: attemptCounts.get(a.taskId) || 1,
+    submitted_query: a.submittedQuery,
+    completed_at: a.completedAt,
   }));
 
   // Sort by query sequence
-  finalAttempts.sort((a, b) => a.querySequence - b.querySequence);
+  observations.sort((a, b) => a.query_sequence - b.query_sequence);
 
-  // CSV headers
+  return observations;
+}
+
+// ---------------------------------------------------------------------------
+// Build structured export payload
+// ---------------------------------------------------------------------------
+
+export function buildExportPayload(session: StudySession, format: ExportFormat): ExportPayload {
+  const observations = prepareFinalObservations(session);
+  const analysis = analyzeSession(session);
+  const grading = gradeSession(analysis);
+
+  return {
+    metadata: {
+      schemaVersion: SCHEMA_VERSION,
+      exportFormat: format,
+      exportedAt: new Date().toISOString(),
+      appVersion: APP_VERSION,
+      description: 'SQL Time Study Lab — EIND 313 Work Design & Analysis',
+    },
+    student: {
+      studentId: session.studentInfo?.studentId || 'unknown',
+      sqlExpertise: session.studentInfo?.sqlExpertise ?? 0,
+      expertiseLabel: EXPERTISE_LABELS[session.studentInfo?.sqlExpertise ?? 0] || 'Unknown',
+    },
+    observations,
+    analysis,
+    grading,
+    usageHints: {
+      r: [
+        '# R: Load and analyze',
+        'library(jsonlite)',
+        'data <- fromJSON("sql-time-study-STUDENT-DATE.json")',
+        'obs <- as.data.frame(data$observations)',
+        'fit <- lm(log(time_sec) ~ log(query_sequence) + sql_expertise + round, data=obs)',
+        'summary(fit)  # learning exponent = coef on log(query_sequence)',
+      ].join('\n'),
+      python: [
+        '# Python: Load and analyze',
+        'import json, pandas as pd, numpy as np',
+        'from scipy import stats',
+        'with open("sql-time-study-STUDENT-DATE.json") as f:',
+        '    data = json.load(f)',
+        'df = pd.DataFrame(data["observations"])',
+        'slope, intercept, r, p, se = stats.linregress(np.log(df.query_sequence), np.log(df.time_sec))',
+        'print(f"Learning exponent: {slope:.3f}, Rate: {2**slope:.1%}, R²: {r**2:.3f}")',
+      ].join('\n'),
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// CSV Export (updated: now includes submitted_query)
+// ---------------------------------------------------------------------------
+
+/**
+ * Export session data as CSV string.
+ * Now includes submitted_query column.
+ */
+export function exportToCsv(session: StudySession): string {
+  const observations = prepareFinalObservations(session);
+  if (observations.length === 0) return '';
+
   const headers = [
     'student_id',
     'sql_expertise',
@@ -171,39 +310,102 @@ export function exportToCsv(session: StudySession): string {
     'query_sequence',
     'time_sec',
     'total_attempts',
+    'submitted_query',
     'completed_at',
   ];
 
-  // CSV rows
-  const rows = finalAttempts.map((a) => [
-    a.studentId,
-    a.sqlExpertise,
-    a.round,
-    a.queryNum,
-    a.taskId,
-    a.querySequence,
-    a.timeSec.toFixed(2),
-    a.totalAttempts,
-    a.completedAt,
+  const rows = observations.map((o) => [
+    o.student_id,
+    o.sql_expertise,
+    o.round,
+    o.query_num,
+    o.task_id,
+    o.query_sequence,
+    o.time_sec.toFixed(2),
+    o.total_attempts,
+    csvEscape(o.submitted_query),
+    o.completed_at,
   ]);
 
-  // Combine
-  const csvContent = [
+  return [
     headers.join(','),
     ...rows.map((row) => row.join(',')),
   ].join('\n');
-
-  return csvContent;
 }
 
-/**
- * Trigger CSV download in browser.
- */
-export function downloadCsv(session: StudySession): void {
-  const csv = exportToCsv(session);
-  if (!csv) return;
+/** Escape a value for CSV. Wraps in quotes if it contains commas, quotes, or newlines. */
+function csvEscape(value: string): string {
+  if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+// ---------------------------------------------------------------------------
+// JSON Export
+// ---------------------------------------------------------------------------
+
+/**
+ * Export session data as formatted JSON string with full analysis and grading.
+ */
+export function exportToJson(session: StudySession): string {
+  const payload = buildExportPayload(session, 'json');
+  return JSON.stringify(payload, null, 2);
+}
+
+// ---------------------------------------------------------------------------
+// YAML Export
+// ---------------------------------------------------------------------------
+
+/**
+ * Export session data as YAML string with full analysis and grading.
+ */
+export function exportToYaml(session: StudySession): string {
+  const payload = buildExportPayload(session, 'yaml');
+  return yaml.dump(payload, {
+    indent: 2,
+    lineWidth: 120,
+    noRefs: true,
+    sortKeys: false,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Unified download function
+// ---------------------------------------------------------------------------
+
+const MIME_TYPES: Record<ExportFormat, string> = {
+  csv: 'text/csv;charset=utf-8;',
+  json: 'application/json;charset=utf-8;',
+  yaml: 'text/yaml;charset=utf-8;',
+};
+
+const EXTENSIONS: Record<ExportFormat, string> = {
+  csv: 'csv',
+  json: 'json',
+  yaml: 'yaml',
+};
+
+/**
+ * Export and trigger browser download in the specified format.
+ */
+export function downloadFile(session: StudySession, format: ExportFormat): void {
+  let content: string;
+  switch (format) {
+    case 'csv':
+      content = exportToCsv(session);
+      break;
+    case 'json':
+      content = exportToJson(session);
+      break;
+    case 'yaml':
+      content = exportToYaml(session);
+      break;
+  }
+
+  if (!content) return;
+
+  const blob = new Blob([content], { type: MIME_TYPES[format] });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
 
@@ -211,13 +413,25 @@ export function downloadCsv(session: StudySession): void {
   const date = new Date().toISOString().split('T')[0];
 
   link.setAttribute('href', url);
-  link.setAttribute('download', `sql-time-study-${studentId}-${date}.csv`);
+  link.setAttribute('download', `sql-time-study-${studentId}-${date}.${EXTENSIONS[format]}`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Legacy function: Trigger CSV download in browser.
+ * @deprecated Use downloadFile(session, 'csv') instead.
+ */
+export function downloadCsv(session: StudySession): void {
+  downloadFile(session, 'csv');
+}
+
+// ---------------------------------------------------------------------------
+// Session Stats (unchanged)
+// ---------------------------------------------------------------------------
 
 /**
  * Get summary statistics for display.

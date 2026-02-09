@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -246,7 +246,7 @@ function SessionManager() {
                 variant={session.isComplete ? "default" : "outline"}
                 size={session.isComplete ? "lg" : "default"}
                 className="flex-1"
-                onClick={downloadData}
+                onClick={() => downloadData()}
                 disabled={stats.completedTasks === 0}
               >
                 <Download className="w-4 h-4 mr-2" />

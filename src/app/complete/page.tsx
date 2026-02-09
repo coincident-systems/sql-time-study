@@ -1,17 +1,40 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Download, Clock, Target, RotateCcw, CheckCircle } from 'lucide-react';
+import { Download, Clock, Target, RotateCcw, CheckCircle, FileText, FileJson, FileCode } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useStudy } from '@/context/StudyContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { getTotalTaskCount } from '@/data/tasks';
+import type { ExportFormat } from '@/lib/dataLogger';
+
+const FORMAT_OPTIONS: { value: ExportFormat; label: string; description: string; icon: typeof FileText }[] = [
+  {
+    value: 'csv',
+    label: 'CSV',
+    description: 'For Minitab, Excel, R (read.csv)',
+    icon: FileText,
+  },
+  {
+    value: 'json',
+    label: 'JSON',
+    description: 'For Python, R (jsonlite), includes analysis + grading',
+    icon: FileJson,
+  },
+  {
+    value: 'yaml',
+    label: 'YAML',
+    description: 'For R (yaml), Python (pyyaml), includes analysis + grading',
+    icon: FileCode,
+  },
+];
 
 export default function CompletePage() {
   const router = useRouter();
   const { session, isLoading, downloadData, resetStudy, stats } = useStudy();
+  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('csv');
 
   const handleReset = () => {
     resetStudy();
@@ -128,23 +151,60 @@ export default function CompletePage() {
           </CardContent>
         </Card>
 
-        {/* Download section */}
+        {/* Download section with format picker */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Download Your Data</CardTitle>
             <CardDescription>
-              Export your performance data as a CSV file for Minitab analysis
+              Export your performance data for analysis
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Your CSV will include: student_id, sql_expertise, round, query_num, task_id,
-              query_sequence, time_sec, total_attempts, and completed_at timestamp.
-            </p>
+            {/* Format selector */}
+            <div className="grid grid-cols-3 gap-3">
+              {FORMAT_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = selectedFormat === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedFormat(opt.value)}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary'
+                        : 'border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icon className={`w-4 h-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className={`font-medium text-sm ${isSelected ? 'text-primary' : ''}`}>
+                        {opt.label}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{opt.description}</p>
+                  </button>
+                );
+              })}
+            </div>
 
-            <Button size="lg" className="w-full" onClick={downloadData}>
+            {/* Format-specific info */}
+            {selectedFormat === 'csv' && (
+              <p className="text-sm text-muted-foreground">
+                Includes: student_id, sql_expertise, round, query_num, task_id,
+                query_sequence, time_sec, total_attempts, submitted_query, completed_at.
+              </p>
+            )}
+            {(selectedFormat === 'json' || selectedFormat === 'yaml') && (
+              <p className="text-sm text-muted-foreground">
+                Includes all observation data plus: learning curve regression (exponent, rate, R&sup2;),
+                per-round summaries, task difficulty scores, auto-grading rubric (score, letter grade,
+                criteria breakdown), and R/Python code snippets.
+              </p>
+            )}
+
+            <Button size="lg" className="w-full" onClick={() => downloadData(selectedFormat)}>
               <Download className="w-4 h-4 mr-2" />
-              Download CSV
+              Download {selectedFormat.toUpperCase()}
             </Button>
           </CardContent>
         </Card>
@@ -179,6 +239,14 @@ export default function CompletePage() {
                 and implications for training program design
               </li>
             </ol>
+
+            {(selectedFormat === 'json' || selectedFormat === 'yaml') && (
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
+                <strong>Tip:</strong> The {selectedFormat.toUpperCase()} export already includes
+                the learning curve regression, so you can compare your Minitab results against
+                the pre-computed analysis.
+              </div>
+            )}
           </CardContent>
         </Card>
 
