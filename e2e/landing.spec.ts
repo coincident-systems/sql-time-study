@@ -11,32 +11,32 @@ test.describe('Landing Page', () => {
   });
 
   test('shows intake form', async ({ page }) => {
-    await expect(page.getByLabel('Student ID')).toBeVisible();
+    await expect(page.getByLabel('Name')).toBeVisible();
     await expect(page.getByText('SQL Experience Level')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Begin Investigation' })).toBeVisible();
   });
 
-  test('validates empty student ID', async ({ page }) => {
+  test('validates empty name', async ({ page }) => {
     await page.getByRole('button', { name: 'Begin Investigation' }).click();
-    await expect(page.getByText('Please enter your student ID')).toBeVisible();
+    await expect(page.getByText('Please enter your name')).toBeVisible();
   });
 
-  test('validates student ID format', async ({ page }) => {
-    await page.getByLabel('Student ID').fill('invalid');
+  test('validates name format', async ({ page }) => {
+    await page.getByLabel('Name').fill('X');
     await page.getByRole('button', { name: 'Begin Investigation' }).click();
-    await expect(page.getByText(/must be in format/)).toBeVisible();
+    await expect(page.getByText(/must be 2-50 characters/)).toBeVisible();
   });
 
   test('validates missing SQL expertise', async ({ page }) => {
-    await page.getByLabel('Student ID').fill('a12b345');
+    await page.getByLabel('Name').fill('John Martinez');
     await page.getByRole('button', { name: 'Begin Investigation' }).click();
     await expect(page.getByText('Please select your SQL experience level')).toBeVisible();
   });
 
-  test('accepts valid student ID format', async ({ page }) => {
-    const studentIdInput = page.getByLabel('Student ID');
-    await studentIdInput.click();
-    await studentIdInput.fill('a12b345');
+  test('accepts valid name', async ({ page }) => {
+    const studentNameInput = page.getByLabel('Name');
+    await studentNameInput.click();
+    await studentNameInput.fill('John Martinez');
     
     // Select expertise level
     await page.getByText('0 - Never written SQL').click();
@@ -54,9 +54,9 @@ test.describe('Landing Page', () => {
     await expect(page).toHaveURL('/investigate');
   });
 
-  test('auto-lowercases student ID', async ({ page }) => {
-    const input = page.getByLabel('Student ID');
-    await input.fill('A12B345');
-    await expect(input).toHaveValue('a12b345');
+  test('preserves name casing', async ({ page }) => {
+    const input = page.getByLabel('Name');
+    await input.fill("Mary O'Brien");
+    await expect(input).toHaveValue("Mary O'Brien");
   });
 });

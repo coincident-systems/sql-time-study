@@ -117,12 +117,12 @@ export interface TableSchema {
 // ============================================================================
 
 export interface StudentInfo {
-  studentId: string;
+  studentName: string;
   sqlExpertise: 0 | 1 | 2 | 3;
 }
 
 export interface TaskAttempt {
-  studentId: string;
+  studentName: string;
   sqlExpertise: number;
   round: number;
   queryNum: number;

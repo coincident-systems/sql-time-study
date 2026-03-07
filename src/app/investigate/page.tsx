@@ -155,7 +155,7 @@ export default function InvestigatePage() {
             <div className="flex items-center gap-3">
               <div className="text-right text-sm">
                 <div className="font-medium">
-                  {session.studentInfo?.studentId}
+                  {session.studentInfo?.studentName}
                 </div>
                 <div className="text-muted-foreground">
                   SQL Level: {session.studentInfo?.sqlExpertise}

@@ -101,7 +101,7 @@ describe('exportToCsv', () => {
     const lines = csv.split('\n');
 
     // Header line
-    expect(lines[0]).toContain('student_id');
+    expect(lines[0]).toContain('student_name');
     expect(lines[0]).toContain('sql_expertise');
     expect(lines[0]).toContain('submitted_query');
     expect(lines[0]).toContain('time_sec');
@@ -188,7 +188,7 @@ describe('exportToJson', () => {
     const session = createCleanSession();
     const parsed = JSON.parse(exportToJson(session));
 
-    expect(parsed.student.studentId).toBe('t42x999');
+    expect(parsed.student.studentName).toBe('Test Student');
     expect(parsed.student.sqlExpertise).toBe(2);
     expect(parsed.student.expertiseLabel).toContain('Intermediate');
   });
@@ -276,8 +276,8 @@ describe('exportToYaml', () => {
     const yamlPayload = yaml.load(exportToYaml(session)) as Record<string, unknown>;
 
     // Compare key structural elements (not exact match due to format field)
-    expect((yamlPayload as Record<string, Record<string, unknown>>).student.studentId)
-      .toBe(jsonPayload.student.studentId);
+    expect((yamlPayload as Record<string, Record<string, unknown>>).student.studentName)
+      .toBe(jsonPayload.student.studentName);
     expect((yamlPayload as Record<string, unknown[]>).observations.length)
       .toBe(jsonPayload.observations.length);
     expect((yamlPayload as Record<string, Record<string, unknown>>).grading.totalScore)
@@ -346,12 +346,12 @@ describe('Cross-format consistency', () => {
 
     const csv = exportToCsv(session);
     const firstDataLine = csv.split('\n')[1];
-    expect(firstDataLine).toContain('t42x999');
+    expect(firstDataLine).toContain('Test Student');
 
     const jsonParsed = JSON.parse(exportToJson(session));
-    expect(jsonParsed.student.studentId).toBe('t42x999');
+    expect(jsonParsed.student.studentName).toBe('Test Student');
 
     const yamlParsed = yaml.load(exportToYaml(session)) as Record<string, Record<string, string>>;
-    expect(yamlParsed.student.studentId).toBe('t42x999');
+    expect(yamlParsed.student.studentName).toBe('Test Student');
   });
 });

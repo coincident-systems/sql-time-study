@@ -32,19 +32,19 @@ export async function typeInEditor(page: Page, sql: string) {
 /**
  * Start a study session by filling in the intake form.
  */
-export async function startSession(page: Page, studentId = 'a12b345', expertiseLevel: '0' | '1' | '2' | '3' = '0') {
+export async function startSession(page: Page, studentName = 'Test Student', expertiseLevel: '0' | '1' | '2' | '3' = '0') {
   await page.goto('/');
   
   // Wait for the page to load
   await page.waitForLoadState('domcontentloaded');
   
   // Wait for the intake form to be visible
-  const studentIdInput = page.getByLabel('Student ID');
-  await expect(studentIdInput).toBeVisible({ timeout: 5000 });
+  const studentNameInput = page.getByLabel('Name');
+  await expect(studentNameInput).toBeVisible({ timeout: 5000 });
   
   // Click the input first to focus it, then fill it
-  await studentIdInput.click();
-  await studentIdInput.fill(studentId);
+  await studentNameInput.click();
+  await studentNameInput.fill(studentName);
   
   // Click the radio button directly using a more specific selector
   const expertiseLabels = {

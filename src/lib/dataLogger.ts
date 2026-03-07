@@ -24,7 +24,7 @@ export interface ExportPayload {
     description: string;
   };
   student: {
-    studentId: string;
+    studentName: string;
     sqlExpertise: number;
     expertiseLabel: string;
   };
@@ -39,7 +39,7 @@ export interface ExportPayload {
 }
 
 export interface ExportObservation {
-  student_id: string;
+  student_name: string;
   sql_expertise: number;
   round: number;
   query_num: number;
@@ -146,7 +146,7 @@ export function logAttempt(
   const queryNum = parseInt(queryStr, 10);
 
   const attempt: TaskAttempt = {
-    studentId: session.studentInfo.studentId,
+    studentName: session.studentInfo.studentName,
     sqlExpertise: session.studentInfo.sqlExpertise,
     round,
     queryNum,
@@ -223,7 +223,7 @@ export function prepareFinalObservations(session: StudySession): ExportObservati
 
   // Build final observations with updated attempt counts
   const observations = Array.from(successfulAttempts.values()).map((a) => ({
-    student_id: a.studentId,
+    student_name: a.studentName,
     sql_expertise: a.sqlExpertise,
     round: a.round,
     query_num: a.queryNum,
@@ -259,7 +259,7 @@ export function buildExportPayload(session: StudySession, format: ExportFormat):
       description: 'SQL Time Study Lab — EIND 313 Work Design & Analysis',
     },
     student: {
-      studentId: session.studentInfo?.studentId || 'unknown',
+      studentName: session.studentInfo?.studentName || 'unknown',
       sqlExpertise: session.studentInfo?.sqlExpertise ?? 0,
       expertiseLabel: EXPERTISE_LABELS[session.studentInfo?.sqlExpertise ?? 0] || 'Unknown',
     },
@@ -302,7 +302,7 @@ export function exportToCsv(session: StudySession): string {
   if (observations.length === 0) return '';
 
   const headers = [
-    'student_id',
+    'student_name',
     'sql_expertise',
     'round',
     'query_num',
@@ -315,7 +315,7 @@ export function exportToCsv(session: StudySession): string {
   ];
 
   const rows = observations.map((o) => [
-    o.student_id,
+    o.student_name,
     o.sql_expertise,
     o.round,
     o.query_num,
@@ -409,11 +409,12 @@ export function downloadFile(session: StudySession, format: ExportFormat): void 
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
 
-  const studentId = session.studentInfo?.studentId || 'unknown';
+  const studentName = session.studentInfo?.studentName || 'unknown';
+  const safeName = studentName.replace(/[^a-zA-Z0-9_-]/g, '_');
   const date = new Date().toISOString().split('T')[0];
 
   link.setAttribute('href', url);
-  link.setAttribute('download', `sql-time-study-${studentId}-${date}.${EXTENSIONS[format]}`);
+  link.setAttribute('download', `sql-time-study-${safeName}-${date}.${EXTENSIONS[format]}`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();

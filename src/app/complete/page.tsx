@@ -87,7 +87,7 @@ export default function CompletePage() {
             Investigation Complete!
           </h1>
           <p className="text-muted-foreground">
-            Great work, {session.studentInfo?.studentId}
+            Great work, {session.studentInfo?.studentName}
           </p>
         </div>
 
@@ -190,7 +190,7 @@ export default function CompletePage() {
             {/* Format-specific info */}
             {selectedFormat === 'csv' && (
               <p className="text-sm text-muted-foreground">
-                Includes: student_id, sql_expertise, round, query_num, task_id,
+                Includes: student_name, sql_expertise, round, query_num, task_id,
                 query_sequence, time_sec, total_attempts, submitted_query, completed_at.
               </p>
             )}

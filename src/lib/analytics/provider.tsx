@@ -19,7 +19,7 @@ const IS_ENABLED = typeof window !== 'undefined' && !!POSTHOG_KEY;
 interface AnalyticsContextType {
   isEnabled: boolean;
   track: <T extends AnalyticsEvent>(event: T['event'], properties: Omit<T, 'event'>) => void;
-  identify: (studentId: string, properties?: Partial<UserProperties>) => void;
+  identify: (studentName: string, properties?: Partial<UserProperties>) => void;
   setUserProperties: (properties: Partial<UserProperties>) => void;
   reset: () => void;
   getSessionId: () => string;
@@ -99,17 +99,17 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   };
 
   // Identify user
-  const identify = (studentId: string, properties?: Partial<UserProperties>) => {
+  const identify = (studentName: string, properties?: Partial<UserProperties>) => {
     if (!IS_ENABLED) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[Analytics] Identify:', studentId, properties);
+        console.log('[Analytics] Identify:', studentName, properties);
       }
       return;
     }
 
-    posthog.identify(studentId, {
+    posthog.identify(studentName, {
       ...properties,
-      student_id: studentId,
+      student_name: studentName,
       last_seen: new Date().toISOString(),
     });
   };

@@ -28,8 +28,8 @@ import { rounds } from '@/data/rounds';
 import { getTasksForRound, getTotalTaskCount } from '@/data/tasks';
 import type { StudentInfo } from '@/types';
 
-// Student ID format: letter + 2 digits + letter + 3 digits (e.g., "a12b345")
-const STUDENT_ID_PATTERN = /^[a-zA-Z]\d{2}[a-zA-Z]\d{3}$/;
+// Student name: 2-50 characters, letters, spaces, hyphens, apostrophes
+const STUDENT_NAME_PATTERN = /^[a-zA-Z][a-zA-Z' -]{0,48}[a-zA-Z]$/;
 
 const SQL_EXPERTISE_LABELS = [
   'Never written SQL',
@@ -117,7 +117,7 @@ function SessionManager() {
             <div>
               <CardTitle className="text-xl">Session In Progress</CardTitle>
               <CardDescription>
-                {session.studentInfo?.studentId} &middot; SQL Level{' '}
+                {session.studentInfo?.studentName} &middot; SQL Level{' '}
                 {session.studentInfo?.sqlExpertise} (
                 {SQL_EXPERTISE_LABELS[session.studentInfo?.sqlExpertise ?? 0]})
               </CardDescription>
@@ -298,7 +298,7 @@ function SessionManager() {
 
 function IntakeForm() {
   const { startStudy } = useStudy();
-  const [studentId, setStudentId] = useState('');
+  const [studentName, setStudentName] = useState('');
   const [sqlExpertise, setSqlExpertise] = useState<string>('');
   const [error, setError] = useState('');
 
@@ -306,14 +306,14 @@ function IntakeForm() {
     e.preventDefault();
     setError('');
 
-    if (!studentId.trim()) {
-      setError('Please enter your student ID');
+    if (!studentName.trim()) {
+      setError('Please enter your name');
       return;
     }
 
-    if (!STUDENT_ID_PATTERN.test(studentId.trim())) {
+    if (!STUDENT_NAME_PATTERN.test(studentName.trim())) {
       setError(
-        'Student ID must be in format: a12b345 (letter, 2 digits, letter, 3 digits)'
+        'Name must be 2-50 characters, using only letters, spaces, hyphens, or apostrophes'
       );
       return;
     }
@@ -324,7 +324,7 @@ function IntakeForm() {
     }
 
     const studentInfo: StudentInfo = {
-      studentId: studentId.trim(),
+      studentName: studentName.trim(),
       sqlExpertise: parseInt(sqlExpertise, 10) as 0 | 1 | 2 | 3,
     };
 
@@ -378,17 +378,17 @@ function IntakeForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Student ID */}
+            {/* Student Name */}
             <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
+              <Label htmlFor="studentName">Name</Label>
               <Input
-                id="studentId"
+                id="studentName"
                 type="text"
-                placeholder="e.g., a12b345"
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value.toLowerCase())}
-                className="max-w-xs font-mono"
-                maxLength={7}
+                placeholder="e.g., John Martinez"
+                value={studentName}
+                onChange={(e) => setStudentName(e.target.value)}
+                className="max-w-sm"
+                maxLength={50}
               />
             </div>
 

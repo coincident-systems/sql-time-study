@@ -85,7 +85,7 @@ export function createCleanSession(): StudySession {
   const rng = seededRandom(42);
 
   const studentInfo: StudentInfo = {
-    studentId: 't42x999',
+    studentName: 'Test Student',
     sqlExpertise: 2,
   };
 
@@ -111,7 +111,7 @@ export function createCleanSession(): StudySession {
       cumulativeMs += timeSec * 1000;
 
       attempts.push({
-        studentId: studentInfo.studentId,
+        studentName: studentInfo.studentName,
         sqlExpertise: studentInfo.sqlExpertise,
         round,
         queryNum,
@@ -145,7 +145,7 @@ export function createRetrySession(): StudySession {
   const rng = seededRandom(99);
 
   const studentInfo: StudentInfo = {
-    studentId: 'r99z123',
+    studentName: 'Retry Student',
     sqlExpertise: 1,
   };
 
@@ -174,7 +174,7 @@ export function createRetrySession(): StudySession {
           const wrongTime = 10 + rng() * 20;
           cumulativeMs += wrongTime * 1000;
           attempts.push({
-            studentId: studentInfo.studentId,
+            studentName: studentInfo.studentName,
             sqlExpertise: studentInfo.sqlExpertise,
             round,
             queryNum,
@@ -194,7 +194,7 @@ export function createRetrySession(): StudySession {
       cumulativeMs += timeSec * 1000;
       const attemptNum = queryNum === 1 ? (round <= 3 ? 3 : 2) : 1;
       attempts.push({
-        studentId: studentInfo.studentId,
+        studentName: studentInfo.studentName,
         sqlExpertise: studentInfo.sqlExpertise,
         round,
         queryNum,
@@ -243,7 +243,7 @@ export function createPartialSession(): StudySession {
  */
 export function createEmptySession(): StudySession {
   return {
-    studentInfo: { studentId: 'e00a000', sqlExpertise: 0 },
+    studentInfo: { studentName: 'Empty Student', sqlExpertise: 0 },
     currentRound: 1,
     currentQuery: 1,
     attempts: [],

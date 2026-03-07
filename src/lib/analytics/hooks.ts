@@ -37,7 +37,7 @@ function analyzeQuery(sql: string) {
 // ============================================================================
 
 interface BaseContext {
-  studentId: string;
+  studentName: string;
   sqlExpertise: number;
 }
 
@@ -47,7 +47,7 @@ export function useStudyTracking() {
 
   const getBaseProperties = useCallback(
     (ctx: BaseContext) => ({
-      student_id: ctx.studentId,
+      student_name: ctx.studentName,
       sql_expertise: ctx.sqlExpertise,
       session_id: getSessionId(),
       timestamp: new Date().toISOString(),
@@ -59,8 +59,8 @@ export function useStudyTracking() {
   // Study started
   const trackStudyStarted = useCallback(
     (ctx: BaseContext) => {
-      identify(ctx.studentId, {
-        student_id: ctx.studentId,
+      identify(ctx.studentName, {
+        student_name: ctx.studentName,
         sql_expertise: ctx.sqlExpertise,
         first_seen: new Date().toISOString(),
         last_seen: new Date().toISOString(),
@@ -121,7 +121,7 @@ export function useRoundTracking() {
 
   const getBaseProperties = useCallback(
     (ctx: BaseContext) => ({
-      student_id: ctx.studentId,
+      student_name: ctx.studentName,
       sql_expertise: ctx.sqlExpertise,
       session_id: getSessionId(),
       timestamp: new Date().toISOString(),
@@ -192,7 +192,7 @@ export function useQueryTracking() {
 
   const getBaseProperties = useCallback(
     (ctx: BaseContext) => ({
-      student_id: ctx.studentId,
+      student_name: ctx.studentName,
       sql_expertise: ctx.sqlExpertise,
       session_id: getSessionId(),
       timestamp: new Date().toISOString(),
@@ -336,7 +336,7 @@ export function useUITracking() {
 
   const getBaseProperties = useCallback(
     (ctx: BaseContext) => ({
-      student_id: ctx.studentId,
+      student_name: ctx.studentName,
       sql_expertise: ctx.sqlExpertise,
       session_id: getSessionId(),
       timestamp: new Date().toISOString(),
@@ -398,7 +398,7 @@ export function useErrorTracking() {
       }
     ) => {
       track<ErrorEvent>('error', {
-        student_id: ctx.studentId || 'anonymous',
+        student_name: ctx.studentName || 'anonymous',
         sql_expertise: ctx.sqlExpertise || 0,
         session_id: getSessionId(),
         timestamp: new Date().toISOString(),

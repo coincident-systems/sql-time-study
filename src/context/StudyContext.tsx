@@ -111,7 +111,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         roundStartTimeRef.current = Date.now();
         const stats = getSessionStats(session);
         trackRoundStarted(
-          { studentId: session.studentInfo.studentId, sqlExpertise: session.studentInfo.sqlExpertise },
+          { studentName: session.studentInfo.studentName, sqlExpertise: session.studentInfo.sqlExpertise },
           {
             round: round.id,
             roundTitle: round.title,
@@ -135,7 +135,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
   const getAnalyticsContext = useCallback(() => {
     if (!session.studentInfo) return null;
     return {
-      studentId: session.studentInfo.studentId,
+      studentName: session.studentInfo.studentName,
       sqlExpertise: session.studentInfo.sqlExpertise,
     };
   }, [session.studentInfo]);
@@ -150,7 +150,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
     // Track study start
     trackStudyStarted({
-      studentId: studentInfo.studentId,
+      studentName: studentInfo.studentName,
       sqlExpertise: studentInfo.sqlExpertise,
     });
   }, [trackStudyStarted]);
@@ -187,7 +187,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       }
 
       const ctx = {
-        studentId: session.studentInfo.studentId,
+        studentName: session.studentInfo.studentName,
         sqlExpertise: session.studentInfo.sqlExpertise,
       };
 

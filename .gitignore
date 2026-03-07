@@ -48,3 +48,6 @@ storybook-static
 # playwright
 playwright-report/
 test-results/
+
+# generated sample exports
+/artifacts/

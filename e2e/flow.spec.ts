@@ -15,9 +15,9 @@ test.describe('Full Study Flow', () => {
   });
 
   test('persists session across page refresh', async ({ page }) => {
-    await startSession(page, 'a12b345', '2');
+    await startSession(page, 'Jane Doe', '2');
     await page.reload();
-    await expect(page.getByText('a12b345')).toBeVisible();
+    await expect(page.getByText('Jane Doe')).toBeVisible();
     await expect(page.getByText('SQL Level: 2')).toBeVisible();
   });
 

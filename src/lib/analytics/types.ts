@@ -11,7 +11,7 @@
 
 export interface BaseEventProperties {
   // Session identification
-  student_id: string;
+  student_name: string;
   sql_expertise: number; // 0-3
   session_id: string; // Unique per browser session
 
@@ -190,7 +190,7 @@ export type AnalyticsEvent =
 // ============================================================================
 
 export interface UserProperties {
-  student_id: string;
+  student_name: string;
   sql_expertise: number;
   first_seen: string;
   last_seen: string;

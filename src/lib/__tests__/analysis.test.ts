@@ -158,7 +158,7 @@ describe('fitLearningCurve', () => {
   it('fits a perfect power law exactly', () => {
     // Create synthetic data: T_n = 100 * n^(-0.5)
     const attempts = Array.from({ length: 10 }, (_, i) => ({
-      studentId: 'test',
+      studentName: 'Test Student',
       sqlExpertise: 0,
       round: 1,
       queryNum: i + 1,

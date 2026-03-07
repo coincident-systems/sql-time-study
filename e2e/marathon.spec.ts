@@ -15,7 +15,7 @@ test.describe('Full 18-Query Marathon', () => {
   
   test('completes all 18 queries successfully', async ({ page }) => {
     // Start session (student ID must match pattern: letter + 2 digits + letter + 3 digits)
-    await startSession(page, 't12s345', '3');
+    await startSession(page, 'Taylor Smith', '3');
     
     // Track progress
     let currentRound = 1;
@@ -94,7 +94,7 @@ test.describe('Full 18-Query Marathon', () => {
 
   test('can complete investigation with some retries', async ({ page }) => {
     // Start session
-    await startSession(page, 'r45y678', '2');
+    await startSession(page, 'Robin Young', '2');
     
     let queriesCompleted = 0;
     let totalAttempts = 0;
@@ -151,7 +151,7 @@ test.describe('Full 18-Query Marathon', () => {
 
   test('can pause and resume marathon', async ({ page }) => {
     // Start session
-    await startSession(page, 'p78s901', '1');
+    await startSession(page, 'Pat Sullivan', '1');
     
     // Complete first 9 queries (half way)
     for (let i = 0; i < 9; i++) {
@@ -225,7 +225,7 @@ test.describe('Full 18-Query Marathon', () => {
 
   test('can view hints during marathon', async ({ page }) => {
     // Start session
-    await startSession(page, 'h99t234', '0');
+    await startSession(page, 'Hannah Torres', '0');
     dismissNarrative(page);
     
     // Complete first query with hints

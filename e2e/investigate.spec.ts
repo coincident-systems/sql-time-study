@@ -6,7 +6,7 @@ test.describe('Investigation Page', () => {
     // Clear localStorage and start a fresh session
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
-    await startSession(page, 'i12v123', '0');
+    await startSession(page, 'Ivy Vasquez', '0');
   });
 
   test('displays the investigation interface', async ({ page }) => {
