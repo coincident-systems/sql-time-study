@@ -359,6 +359,92 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     }
   }, [session, getAnalyticsContext, trackCsvDownloaded]);
 
+  // ---------------------------------------------------------------------------
+  // Dev console helpers (dev only, tree-shaken in production)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+
+    const STORAGE_KEY = 'sql-time-study-session';
+
+    /**
+     * Skip to any task by ID. Generates fake attempts for all prior tasks.
+     * Usage: __skipTo("3.2")  — jumps to round 3, query 2
+     *        __skipTo("5.4")  — jumps to the last task
+     *        __skipTo("1.1")  — resets to the first task (keeps session)
+     */
+    (window as unknown as Record<string, unknown>).__skipTo = (taskId: string) => {
+      const targetIdx = tasks.findIndex((t) => t.id === taskId);
+      if (targetIdx === -1) {
+        console.error(`Unknown task "${taskId}". Valid: ${tasks.map((t) => t.id).join(', ')}`);
+        return;
+      }
+
+      const target = tasks[targetIdx];
+      const info = session.studentInfo ?? { studentName: 'Debug User', sqlExpertise: 2 as const };
+
+      // Build fake attempts for all tasks before the target
+      const fakeAttempts: StudySession['attempts'] = tasks.slice(0, targetIdx).map((t, i) => ({
+        studentName: info.studentName,
+        sqlExpertise: info.sqlExpertise,
+        round: t.round,
+        queryNum: t.queryNum,
+        taskId: t.id,
+        querySequence: i + 1,
+        attemptNum: 1,
+        timeSec: 30 + Math.random() * 60,
+        totalAttempts: 1,
+        submittedQuery: t.expectedQuery,
+        completedAt: new Date().toISOString(),
+        isCorrect: true,
+      }));
+
+      const patched: StudySession = {
+        studentInfo: info,
+        currentRound: target.round,
+        currentQuery: target.queryNum,
+        attempts: fakeAttempts,
+        taskStartTime: Date.now(),
+        isComplete: false,
+      };
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(patched));
+      window.location.href = '/investigate';
+    };
+
+    /**
+     * Reset session and go to intake form.
+     * Usage: __reset()
+     */
+    (window as unknown as Record<string, unknown>).__reset = () => {
+      localStorage.removeItem(STORAGE_KEY);
+      window.location.href = '/';
+    };
+
+    /**
+     * Print available tasks.
+     * Usage: __tasks()
+     */
+    (window as unknown as Record<string, unknown>).__tasks = () => {
+      const current = currentTask?.id || '(none)';
+      console.table(tasks.map((t) => ({
+        id: t.id,
+        round: t.round,
+        prompt: t.prompt.substring(0, 60) + (t.prompt.length > 60 ? '...' : ''),
+        current: t.id === current ? '<--' : '',
+      })));
+    };
+
+    console.log(
+      '%c[SQL Time Study Dev Tools]%c\n' +
+      '  __skipTo("3.2")  — jump to any task\n' +
+      '  __reset()        — clear session\n' +
+      '  __tasks()        — list all tasks',
+      'color: #f4b425; font-weight: bold',
+      'color: inherit'
+    );
+  }, [session.studentInfo, currentTask]);
+
   // Calculate stats
   const stats = getSessionStats(session);
 
