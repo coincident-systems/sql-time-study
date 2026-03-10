@@ -33,7 +33,7 @@ const FORMAT_OPTIONS: { value: ExportFormat; label: string; description: string;
 
 export default function CompletePage() {
   const router = useRouter();
-  const { session, isLoading, downloadData, resetStudy, stats } = useStudy();
+  const { session, isLoading, downloadData, resetStudy, exitSandbox, stats } = useStudy();
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('csv');
 
   const handleReset = () => {

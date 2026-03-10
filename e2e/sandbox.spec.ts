@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { dismissNarrative, typeInEditor } from './helpers';
+import { startSession, dismissNarrative, typeInEditor } from './helpers';
 
 test.describe('Sandbox Mode (?skipTo=)', () => {
   test.beforeEach(async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe('Sandbox Mode (?skipTo=)', () => {
     await expect(page.getByText('Query 4.2')).toBeVisible();
   });
 
-  test('exit sandbox returns to home with clean state', async ({ page }) => {
+  test('exit sandbox returns to home with clean state when no prior session', async ({ page }) => {
     await page.goto('/investigate?skipTo=3.1');
     await page.waitForLoadState('domcontentloaded');
 
@@ -85,9 +85,36 @@ test.describe('Sandbox Mode (?skipTo=)', () => {
     await page.getByRole('button', { name: 'Exit Sandbox' }).click();
     await page.waitForTimeout(500);
 
-    // Should be on home page with intake form (no session)
+    // Should be on home page with intake form (no prior session to restore)
     await expect(page).toHaveURL('/');
     await expect(page.getByLabel('Name')).toBeVisible();
+  });
+
+  test('exit sandbox restores active session', async ({ page }) => {
+    // Start a real session first
+    await startSession(page, 'Jane Doe', '2');
+
+    // Complete the first query so we have real progress
+    await dismissNarrative(page);
+    await typeInEditor(page, "SELECT * FROM patients WHERE last_name = 'Martinez';");
+    await page.getByRole('button', { name: /Submit Answer/ }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Correct/i)).toBeVisible();
+
+    // Now enter sandbox via ?skipTo=
+    await page.goto('/investigate?skipTo=4.1');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByText('Sandbox Mode')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Query 4.1')).toBeVisible();
+
+    // Exit sandbox
+    await page.getByRole('button', { name: 'Exit Sandbox' }).click();
+    await page.waitForTimeout(500);
+
+    // Should be back on home page with the original session restored
+    await expect(page).toHaveURL('/');
+    await expect(page.getByText('Jane Doe')).toBeVisible();
+    await expect(page.getByText(/1 \/ 18 queries/i)).toBeVisible();
   });
 
   test('skipTo from home page redirects to investigate', async ({ page }) => {

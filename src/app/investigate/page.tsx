@@ -35,7 +35,7 @@ export default function InvestigatePage() {
     runQuery,
     submitAnswer,
     trackHintViewed,
-    resetStudy,
+    exitSandbox,
     skipTo,
     stats,
   } = useStudy();
@@ -237,7 +237,7 @@ export default function InvestigatePage() {
               size="sm"
               className="border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 shrink-0"
               onClick={() => {
-                resetStudy();
+                exitSandbox();
                 router.push('/');
               }}
             >

@@ -40,6 +40,8 @@ interface StudyContextType {
   runQuery: (sql: string) => Promise<QueryResult>;
   submitAnswer: (sql: string) => Promise<{ isCorrect: boolean; message: string }>;
   resetStudy: () => void;
+  /** Exit sandbox: restores previous session if one was active, otherwise resets. */
+  exitSandbox: () => void;
   downloadData: (format?: ExportFormat) => void;
   trackHintViewed: () => void;
   /** Jump to any task by ID (sandbox mode — no advancement, no completion). */
@@ -336,9 +338,12 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     }
   }, [getAnalyticsContext, currentTask, session.taskStartTime, attemptCount, trackHint]);
 
-  // Reset the study
+  // Reset the study (clears everything including stash)
   const resetStudy = useCallback(() => {
     clearSession();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('sql-time-study-session-stash');
+    }
     setSession({
       studentInfo: null,
       currentRound: 1,
@@ -354,6 +359,28 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     // Reset analytics
     trackStudyReset();
   }, [trackStudyReset]);
+
+  // Exit sandbox: restore stashed session if one exists, otherwise reset
+  const exitSandbox = useCallback(() => {
+    const STORAGE_KEY = 'sql-time-study-session';
+    const STASH_KEY = 'sql-time-study-session-stash';
+    const stashed = typeof window !== 'undefined' ? localStorage.getItem(STASH_KEY) : null;
+
+    if (stashed) {
+      try {
+        const restored = JSON.parse(stashed) as StudySession;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
+        localStorage.removeItem(STASH_KEY);
+        setSession(restored);
+        return;
+      } catch {
+        // Corrupted stash — fall through to reset
+      }
+    }
+
+    // No stash to restore — full reset
+    resetStudy();
+  }, [resetStudy]);
 
   // Download data in specified format
   const downloadData = useCallback((format: ExportFormat = 'csv') => {
@@ -376,6 +403,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
   const skipToTask = useCallback((taskId: string) => {
     const STORAGE_KEY = 'sql-time-study-session';
+    const STASH_KEY = 'sql-time-study-session-stash';
     const targetIdx = tasks.findIndex((t) => t.id === taskId);
     if (targetIdx === -1) {
       console.error(`Unknown task "${taskId}". Valid: ${tasks.map((t) => t.id).join(', ')}`);
@@ -384,6 +412,11 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
     const target = tasks[targetIdx];
     const info = session.studentInfo ?? { studentName: 'Sandbox User', sqlExpertise: 2 as const };
+
+    // Stash the real session (if one exists and isn't already sandbox)
+    if (!session.sandboxMode && session.studentInfo) {
+      localStorage.setItem(STASH_KEY, JSON.stringify(session));
+    }
 
     const patched: StudySession = {
       studentInfo: info,
@@ -397,7 +430,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(patched));
     setSession(patched);
-  }, [session.studentInfo]);
+  }, [session]);
 
   // Handle ?skipTo= query parameter on any page
   useEffect(() => {
@@ -470,6 +503,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         runQuery,
         submitAnswer,
         resetStudy,
+        exitSandbox,
         downloadData,
         trackHintViewed,
         skipTo: skipToTask,
