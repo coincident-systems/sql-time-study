@@ -275,9 +275,11 @@ export default function InvestigatePage() {
                   <CardTitle className="text-base">
                     Query {currentTask.id}
                   </CardTitle>
-                  <span className="text-xs text-muted-foreground">
-                    {stats.completedTasks + 1} of {totalTasks}
-                  </span>
+                  {!session.sandboxMode && (
+                    <span className="text-xs text-muted-foreground">
+                      {stats.completedTasks + 1} of {totalTasks}
+                    </span>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
