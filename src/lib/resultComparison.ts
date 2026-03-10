@@ -87,30 +87,26 @@ export function compareResults(
     };
   }
 
-  // Normalize column names and check they match (order-independent)
-  const studentCols = studentResult.columns.map(normalizeColumnName).sort();
-  const expectedCols = expectedResult.columns.map(normalizeColumnName).sort();
+  // Column names are intentionally NOT compared — only the data matters.
+  // Students may use different aliases (e.g., COUNT(*) vs "count") and
+  // that's fine as long as the values are correct.
+  //
+  // When column names match, we align by name so column order doesn't matter.
+  // When they don't match, we compare values positionally (column count
+  // already verified above).
 
-  if (JSON.stringify(studentCols) !== JSON.stringify(expectedCols)) {
-    return {
-      isMatch: false,
-      studentResult,
-      expectedResult,
-      message: `Column names don't match. Got: ${studentResult.columns.join(', ')}`,
-    };
-  }
-
-  // For comparison, we need to align columns if they're in different order
-  // Create a mapping from expected column order to student column order
   const studentColMap = new Map<string, number>();
   studentResult.columns.forEach((col, idx) => {
     studentColMap.set(normalizeColumnName(col), idx);
   });
 
-  const colMapping = expectedResult.columns.map((col) => {
-    const normalizedCol = normalizeColumnName(col);
-    return studentColMap.get(normalizedCol) ?? -1;
-  });
+  // Try name-based alignment first; fall back to positional
+  const expectedNormalized = expectedResult.columns.map(normalizeColumnName);
+  const canAlignByName = expectedNormalized.every((col) => studentColMap.has(col));
+
+  const colMapping = canAlignByName
+    ? expectedNormalized.map((col) => studentColMap.get(col) ?? -1)
+    : expectedResult.columns.map((_, idx) => idx);
 
   // Reorder student values to match expected column order
   const reorderedStudentValues = studentResult.values.map((row) =>
