@@ -21,7 +21,7 @@ import { ResultsTable } from '@/components/ResultsTable';
 import { SchemaReference } from '@/components/SchemaReference';
 import { ProgressIndicator } from '@/components/ProgressIndicator';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { getTotalTaskCount } from '@/data/tasks';
+import { tasks, getTotalTaskCount } from '@/data/tasks';
 import type { QueryResult } from '@/types';
 
 export default function InvestigatePage() {
@@ -35,6 +35,8 @@ export default function InvestigatePage() {
     runQuery,
     submitAnswer,
     trackHintViewed,
+    resetStudy,
+    skipTo,
     stats,
   } = useStudy();
 
@@ -198,17 +200,54 @@ export default function InvestigatePage() {
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto p-4">
-        {/* Progress */}
-        <div className="mb-6">
-          <ProgressIndicator
-            currentRound={session.currentRound}
-            currentQuery={session.currentQuery}
-            totalCompleted={stats.completedTasks}
-          />
-        </div>
+        {/* Progress (hidden in sandbox) */}
+        {!session.sandboxMode && (
+          <div className="mb-6">
+            <ProgressIndicator
+              currentRound={session.currentRound}
+              currentQuery={session.currentQuery}
+              totalCompleted={stats.completedTasks}
+            />
+          </div>
+        )}
 
-        {/* Round narrative (shown at start of round) */}
-        {showNarrative && session.currentQuery === 1 && (
+        {/* Sandbox mode banner */}
+        {session.sandboxMode && (
+          <div className="mb-6 flex items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium text-amber-800 dark:text-amber-300">Sandbox Mode</span>
+              <span className="text-sm text-amber-700 dark:text-amber-400 ml-2">
+                Trying a single task — progress is not tracked.
+              </span>
+            </div>
+            <select
+              className="text-sm rounded-md border border-amber-500/40 bg-transparent px-2 py-1 text-amber-800 dark:text-amber-300 cursor-pointer"
+              value={currentTask?.id || ''}
+              onChange={(e) => skipTo(e.target.value)}
+            >
+              {tasks.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.id} — {t.prompt.length > 50 ? t.prompt.substring(0, 50) + '…' : t.prompt}
+                </option>
+              ))}
+            </select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 shrink-0"
+              onClick={() => {
+                resetStudy();
+                router.push('/');
+              }}
+            >
+              Exit Sandbox
+            </Button>
+          </div>
+        )}
+
+        {/* Round narrative (shown at start of round, hidden in sandbox) */}
+        {showNarrative && session.currentQuery === 1 && !session.sandboxMode && (
           <Card className="mb-6 border-accent/30 bg-accent/10 dark:bg-accent/20 dark:border-accent/40">
             <CardContent className="pt-6">
               <p className="text-sm leading-relaxed whitespace-pre-line">

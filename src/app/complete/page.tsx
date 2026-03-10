@@ -57,6 +57,21 @@ export default function CompletePage() {
 
   const totalTasks = getTotalTaskCount();
 
+  // Guard: sandbox mode has no completion
+  if (session.sandboxMode) {
+    return (
+      <div className="flex-1 bg-background py-12 px-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-2xl font-bold text-primary mb-4">Sandbox Mode</h1>
+          <p className="text-muted-foreground mb-6">
+            Completion and data export are not available in sandbox mode.
+          </p>
+          <Button onClick={() => router.push('/investigate')}>Back to Sandbox</Button>
+        </div>
+      </div>
+    );
+  }
+
   // Guard: show message if not completed
   if (!session.isComplete) {
     return (

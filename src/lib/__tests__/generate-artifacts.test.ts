@@ -172,13 +172,13 @@ describe('generate artifacts', () => {
       ],
       _generated: new Date().toISOString(),
 
-      // Expected queries per task
+      // Expected queries per task (newlines collapsed to single-line for easy copy-paste)
       expectedQueries: tasks.map((t) => ({
         taskId: t.id,
         round: t.round,
         queryNum: t.queryNum,
         prompt: t.prompt,
-        expectedQuery: t.expectedQuery,
+        expectedQuery: t.expectedQuery.replace(/\n/g, ' '),
         preserveOrder: t.preserveOrder,
         hints: t.hints || [],
       })),

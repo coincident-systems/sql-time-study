@@ -3,16 +3,21 @@ import { executeQuery } from './database';
 
 /**
  * Normalize a value for comparison:
- * - Round floats to 2 decimal places
+ * - Round floats to 1 decimal place (tolerant of student ROUND() usage)
  * - Convert to string for consistent comparison
+ *
+ * Using 1 decimal place means ROUND(AVG(x), 1) and raw AVG(x) produce
+ * the same normalized value, so students aren't penalized for rounding.
  */
 function normalizeValue(value: unknown): string {
   if (value === null || value === undefined) {
     return 'NULL';
   }
   if (typeof value === 'number') {
-    // Round floats to 2 decimal places
-    return Number(value.toFixed(2)).toString();
+    // Round to 1 decimal place so ROUND(..., 1) and raw aggregates both match.
+    // This is intentionally coarse — the goal is to verify the student got the
+    // right data, not that they used identical floating-point formatting.
+    return Number(value.toFixed(1)).toString();
   }
   return String(value);
 }

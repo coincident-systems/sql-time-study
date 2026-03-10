@@ -143,6 +143,8 @@ export interface StudySession {
   attempts: TaskAttempt[];
   taskStartTime: number | null;
   isComplete: boolean;
+  /** When true, session was created via ?skipTo= — no advancement, no completion, no export. */
+  sandboxMode?: boolean;
 }
 
 // ============================================================================

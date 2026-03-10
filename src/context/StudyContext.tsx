@@ -42,6 +42,8 @@ interface StudyContextType {
   resetStudy: () => void;
   downloadData: (format?: ExportFormat) => void;
   trackHintViewed: () => void;
+  /** Jump to any task by ID (sandbox mode — no advancement, no completion). */
+  skipTo: (taskId: string) => void;
 
   // Stats
   stats: ReturnType<typeof getSessionStats>;
@@ -229,7 +231,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         result.isMatch
       );
 
-      // If correct, advance to next task
+      // If correct, handle advancement
       if (result.isMatch) {
         cumulativeTimeRef.current += timeSec;
 
@@ -246,55 +248,64 @@ export function StudyProvider({ children }: { children: ReactNode }) {
           cumulativeTimeSec: cumulativeTimeRef.current,
         });
 
-        const totalTasks = getTotalTaskCount();
-        const completedCount = querySequence;
-
-        // Check if round completed
-        const nextQueryInRound = session.currentQuery + 1;
-        const tasksInCurrentRound = getTasksForRound(session.currentRound);
-
-        if (nextQueryInRound > tasksInCurrentRound.length && roundStartTimeRef.current) {
-          // Round completed - track it
-          const roundTimeSec = (Date.now() - roundStartTimeRef.current) / 1000;
-          const roundAttempts = session.attempts.filter(
-            (a) => a.round === session.currentRound
-          ).length + 1;
-
-          trackRoundCompleted(ctx, {
-            round: session.currentRound,
-            roundTitle: currentRound?.title || '',
-            roundTimeSec,
-            queriesInRound: tasksInCurrentRound.length,
-            attemptsInRound: roundAttempts,
-          });
-        }
-
-        if (completedCount >= totalTasks) {
-          // Study complete!
-          updatedSession = advanceSession(
-            updatedSession,
-            session.currentRound,
-            session.currentQuery,
-            true
-          );
-
-          // Track study completion
-          const finalStats = getSessionStats(updatedSession);
-          trackStudyCompleted(ctx, {
-            totalTimeSec: finalStats.totalTime,
-            totalQueriesCompleted: finalStats.completedTasks,
-            totalAttempts: finalStats.totalAttempts,
-            avgTimePerQuerySec: finalStats.avgTime,
-            avgAttemptsPerQuery: finalStats.avgAttempts,
-          });
+        // In sandbox mode: stay on the same task, just reset the timer
+        if (session.sandboxMode) {
+          updatedSession = {
+            ...updatedSession,
+            taskStartTime: Date.now(),
+            sandboxMode: true,
+          };
         } else {
-          // Move to next task
-          if (nextQueryInRound <= tasksInCurrentRound.length) {
-            // Next query in same round
-            updatedSession = advanceSession(updatedSession, session.currentRound, nextQueryInRound);
+          const totalTasks = getTotalTaskCount();
+          const completedCount = querySequence;
+
+          // Check if round completed
+          const nextQueryInRound = session.currentQuery + 1;
+          const tasksInCurrentRound = getTasksForRound(session.currentRound);
+
+          if (nextQueryInRound > tasksInCurrentRound.length && roundStartTimeRef.current) {
+            // Round completed - track it
+            const roundTimeSec = (Date.now() - roundStartTimeRef.current) / 1000;
+            const roundAttempts = session.attempts.filter(
+              (a) => a.round === session.currentRound
+            ).length + 1;
+
+            trackRoundCompleted(ctx, {
+              round: session.currentRound,
+              roundTitle: currentRound?.title || '',
+              roundTimeSec,
+              queriesInRound: tasksInCurrentRound.length,
+              attemptsInRound: roundAttempts,
+            });
+          }
+
+          if (completedCount >= totalTasks) {
+            // Study complete!
+            updatedSession = advanceSession(
+              updatedSession,
+              session.currentRound,
+              session.currentQuery,
+              true
+            );
+
+            // Track study completion
+            const finalStats = getSessionStats(updatedSession);
+            trackStudyCompleted(ctx, {
+              totalTimeSec: finalStats.totalTime,
+              totalQueriesCompleted: finalStats.completedTasks,
+              totalAttempts: finalStats.totalAttempts,
+              avgTimePerQuerySec: finalStats.avgTime,
+              avgAttemptsPerQuery: finalStats.avgAttempts,
+            });
           } else {
-            // Move to next round
-            updatedSession = advanceSession(updatedSession, session.currentRound + 1, 1);
+            // Move to next task
+            if (nextQueryInRound <= tasksInCurrentRound.length) {
+              // Next query in same round
+              updatedSession = advanceSession(updatedSession, session.currentRound, nextQueryInRound);
+            } else {
+              // Move to next round
+              updatedSession = advanceSession(updatedSession, session.currentRound + 1, 1);
+            }
           }
         }
       }
@@ -372,31 +383,16 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     }
 
     const target = tasks[targetIdx];
-    const info = session.studentInfo ?? { studentName: 'Debug User', sqlExpertise: 2 as const };
-
-    // Build fake attempts for all tasks before the target
-    const fakeAttempts: StudySession['attempts'] = tasks.slice(0, targetIdx).map((t, i) => ({
-      studentName: info.studentName,
-      sqlExpertise: info.sqlExpertise,
-      round: t.round,
-      queryNum: t.queryNum,
-      taskId: t.id,
-      querySequence: i + 1,
-      attemptNum: 1,
-      timeSec: 30 + Math.random() * 60,
-      totalAttempts: 1,
-      submittedQuery: t.expectedQuery,
-      completedAt: new Date().toISOString(),
-      isCorrect: true,
-    }));
+    const info = session.studentInfo ?? { studentName: 'Sandbox User', sqlExpertise: 2 as const };
 
     const patched: StudySession = {
       studentInfo: info,
       currentRound: target.round,
       currentQuery: target.queryNum,
-      attempts: fakeAttempts,
+      attempts: [],
       taskStartTime: Date.now(),
       isComplete: false,
+      sandboxMode: true,
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(patched));
@@ -476,6 +472,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         resetStudy,
         downloadData,
         trackHintViewed,
+        skipTo: skipToTask,
         stats,
       }}
     >
