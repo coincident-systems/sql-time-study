@@ -109,12 +109,11 @@ test.describe('Sandbox Mode (?skipTo=)', () => {
 
     // Exit sandbox
     await page.getByRole('button', { name: 'Exit Sandbox' }).click();
-    await page.waitForTimeout(500);
 
     // Should be back on home page with the original session restored
-    await expect(page).toHaveURL('/');
-    await expect(page.getByText('Jane Doe')).toBeVisible();
-    await expect(page.getByText(/1 \/ 18 queries/i)).toBeVisible();
+    await expect(page).toHaveURL('/', { timeout: 10000 });
+    await expect(page.getByText('Jane Doe')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/1 \/ 18 queries/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('skipTo from home page redirects to investigate', async ({ page }) => {
@@ -137,7 +136,7 @@ test.describe('Sandbox Mode (?skipTo=)', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Should show the sandbox guard, not completion screen
-    await expect(page.getByText('Sandbox Mode')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sandbox Mode' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/not available in sandbox/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Back to Sandbox' })).toBeVisible();
   });
