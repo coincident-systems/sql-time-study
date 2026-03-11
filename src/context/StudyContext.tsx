@@ -411,11 +411,21 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     }
 
     const target = tasks[targetIdx];
-    const info = session.studentInfo ?? { studentName: 'Sandbox User', sqlExpertise: 2 as const };
+
+    // Read the current saved session directly from localStorage so we don't
+    // depend on React state which may not be hydrated yet (race condition on
+    // mount when ?skipTo= fires before the init useEffect restores the session).
+    let savedSession: StudySession | null = null;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) savedSession = JSON.parse(raw) as StudySession;
+    } catch { /* ignore corrupted data */ }
+
+    const info = savedSession?.studentInfo ?? session.studentInfo ?? { studentName: 'Sandbox User', sqlExpertise: 2 as const };
 
     // Stash the real session (if one exists and isn't already sandbox)
-    if (!session.sandboxMode && session.studentInfo) {
-      localStorage.setItem(STASH_KEY, JSON.stringify(session));
+    if (savedSession && !savedSession.sandboxMode && savedSession.studentInfo) {
+      localStorage.setItem(STASH_KEY, JSON.stringify(savedSession));
     }
 
     const patched: StudySession = {
